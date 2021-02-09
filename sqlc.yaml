@@ -1,0 +1,11 @@
+version: "1"
+packages:
+  - name: "queries"
+    path: "internal/db/queries"
+    queries: "./internal/db/queries/sql"
+    schema: "./internal/db/queries/sql"
+    engine: "postgresql"
+    emit_prepared_queries: false
+    emit_interface: false
+    emit_exact_table_names: false
+    emit_empty_slices: false
