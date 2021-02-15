@@ -94,6 +94,60 @@ func (q *Queries) GetBestBuyer(ctx context.Context, limitPrice int64) (StandingO
 	return i, err
 }
 
+const getBestMarketBuyer = `-- name: GetBestMarketBuyer :one
+SELECT id, account_id, type, state, quantity, filled_quantity, filled_price, limit_price, reserved_usd_amount, reserved_btc_amount, webhook_url
+FROM standing_order
+WHERE state = 'live'
+  AND type = 'buy'
+ORDER BY limit_price DESC LIMIT 1
+`
+
+func (q *Queries) GetBestMarketBuyer(ctx context.Context) (StandingOrder, error) {
+	row := q.db.QueryRowContext(ctx, getBestMarketBuyer)
+	var i StandingOrder
+	err := row.Scan(
+		&i.ID,
+		&i.AccountID,
+		&i.Type,
+		&i.State,
+		&i.Quantity,
+		&i.FilledQuantity,
+		&i.FilledPrice,
+		&i.LimitPrice,
+		&i.ReservedUsdAmount,
+		&i.ReservedBtcAmount,
+		&i.WebhookUrl,
+	)
+	return i, err
+}
+
+const getBestMarketSeller = `-- name: GetBestMarketSeller :one
+SELECT id, account_id, type, state, quantity, filled_quantity, filled_price, limit_price, reserved_usd_amount, reserved_btc_amount, webhook_url
+FROM standing_order
+WHERE state = 'live'
+  AND type = 'sell'
+ORDER BY limit_price ASC LIMIT 1
+`
+
+func (q *Queries) GetBestMarketSeller(ctx context.Context) (StandingOrder, error) {
+	row := q.db.QueryRowContext(ctx, getBestMarketSeller)
+	var i StandingOrder
+	err := row.Scan(
+		&i.ID,
+		&i.AccountID,
+		&i.Type,
+		&i.State,
+		&i.Quantity,
+		&i.FilledQuantity,
+		&i.FilledPrice,
+		&i.LimitPrice,
+		&i.ReservedUsdAmount,
+		&i.ReservedBtcAmount,
+		&i.WebhookUrl,
+	)
+	return i, err
+}
+
 const getBestSeller = `-- name: GetBestSeller :one
 SELECT id, account_id, type, state, quantity, filled_quantity, filled_price, limit_price, reserved_usd_amount, reserved_btc_amount, webhook_url
 FROM standing_order
@@ -123,7 +177,7 @@ func (q *Queries) GetBestSeller(ctx context.Context, limitPrice int64) (Standing
 }
 
 const getReservedAmounts = `-- name: GetReservedAmounts :one
-SELECT SUM(reserved_usd_amount) as usd_amount, SUM(reserved_btc_amount) as btc_amount
+SELECT COALESCE(SUM(reserved_usd_amount), 0)::bigint as usd_amount, COALESCE(SUM(reserved_btc_amount), 0) ::bigint as btc_amount
 FROM standing_order
 WHERE account_id = $1
   AND state = 'live'

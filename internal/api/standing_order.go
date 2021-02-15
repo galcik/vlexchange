@@ -3,8 +3,8 @@ package api
 import (
 	"encoding/json"
 	"github.com/galcik/vlexchange/internal/currency"
-	"github.com/galcik/vlexchange/internal/db"
-	"github.com/galcik/vlexchange/internal/db/queries"
+	"github.com/galcik/vlexchange/internal/datastore"
+	"github.com/galcik/vlexchange/internal/datastore/queries"
 	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
@@ -67,7 +67,7 @@ func (server *Server) handlePostStandingOrder(w http.ResponseWriter, req *http.R
 	}
 
 	standingOrder, affectedOrderIds, err := store.CreateStandingOrder(
-		db.CreateStandingOrderParams{
+		datastore.CreateStandingOrderParams{
 			AccountID:  account.ID,
 			OrderType:  orderType,
 			Quantity:   quantity,

@@ -9,8 +9,7 @@ import (
 
 const createAccount = `-- name: CreateAccount :one
 INSERT INTO account (username, token)
-VALUES ($1, $2)
-RETURNING id, username, token, usd_amount, btc_amount
+VALUES ($1, $2) RETURNING id, username, token, usd_amount, btc_amount
 `
 
 type CreateAccountParams struct {
@@ -34,8 +33,7 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (A
 const getAccountById = `-- name: GetAccountById :one
 SELECT id, username, token, usd_amount, btc_amount
 FROM account
-WHERE id = $1
-LIMIT 1
+WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetAccountById(ctx context.Context, id int32) (Account, error) {
@@ -54,8 +52,7 @@ func (q *Queries) GetAccountById(ctx context.Context, id int32) (Account, error)
 const getAccountByToken = `-- name: GetAccountByToken :one
 SELECT id, username, token, usd_amount, btc_amount
 FROM account
-WHERE token = $1
-LIMIT 1
+WHERE token = $1 LIMIT 1
 `
 
 func (q *Queries) GetAccountByToken(ctx context.Context, token string) (Account, error) {

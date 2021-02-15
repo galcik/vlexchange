@@ -1,12 +1,10 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/galcik/vlexchange/internal/coinmarket"
 	"github.com/galcik/vlexchange/internal/currency"
-	"github.com/galcik/vlexchange/internal/db/queries"
 	"net/http"
 	"strings"
 )
@@ -94,22 +92,7 @@ func (server *Server) handlePostBalance(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	var success bool
-	err = store.ExecuteTx(
-		func(ctx context.Context, q *queries.Queries) error {
-			rowCount, err := q.TransferAmounts(
-				ctx,
-				queries.TransferAmountsParams{
-					ID:        account.ID,
-					UsdAmount: usdAmount.Internal(),
-					BtcAmount: btcAmount.Internal(),
-				},
-			)
-			success = rowCount == 1
-			return err
-		},
-	)
-
+	success, err := store.DepositAccount(account.ID, btcAmount, usdAmount)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/galcik/vlexchange/internal/db/queries"
+	"github.com/galcik/vlexchange/internal/datastore/queries"
 	"log"
 	"net/http"
 )

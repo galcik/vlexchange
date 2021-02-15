@@ -19,6 +19,10 @@ func (btc BTC) Internal() int64 {
 	return int64(btc)
 }
 
+func NewBTC(amount float64) BTC {
+	return BTC(math.Round(amount * BTCBase))
+}
+
 func ParseBTC(amountStr string) (BTC, error) {
 	amount, err := convertStringToAmount(amountStr, BTCPrecision)
 	return BTC(amount), err

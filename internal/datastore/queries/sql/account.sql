@@ -1,19 +1,16 @@
 -- name: GetAccountByToken :one
 SELECT *
 FROM account
-WHERE token = $1
-LIMIT 1;
+WHERE token = $1 LIMIT 1;
 
 -- name: GetAccountById :one
 SELECT *
 FROM account
-WHERE id = $1
-LIMIT 1;
+WHERE id = $1 LIMIT 1;
 
 -- name: CreateAccount :one
 INSERT INTO account (username, token)
-VALUES ($1, $2)
-RETURNING *;
+VALUES ($1, $2) RETURNING *;
 
 -- name: TransferAmounts :execrows
 UPDATE account

@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"github.com/galcik/vlexchange/internal/db/queries"
+	"github.com/galcik/vlexchange/internal/datastore/queries"
 	"github.com/google/uuid"
 	"net/http"
 )
@@ -34,7 +34,7 @@ func (server *Server) handleRegister(w http.ResponseWriter, req *http.Request) {
 
 	var newAccount queries.Account
 	err = store.ExecuteTx(
-		func(ctx context.Context, q *queries.Queries) error {
+		func(ctx context.Context, q queries.Querier) error {
 			newAccount, err = q.CreateAccount(
 				ctx,
 				queries.CreateAccountParams{Username: payload.Username, Token: token.String()},

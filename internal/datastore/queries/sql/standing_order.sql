@@ -19,7 +19,7 @@ FROM standing_order
 WHERE id = $1;
 
 -- name: GetReservedAmounts :one
-SELECT SUM(reserved_usd_amount) as usd_amount, SUM(reserved_btc_amount) as btc_amount
+SELECT COALESCE(SUM(reserved_usd_amount), 0)::bigint as usd_amount, COALESCE(SUM(reserved_btc_amount), 0) ::bigint as btc_amount
 FROM standing_order
 WHERE account_id = $1
   AND state = 'live';
@@ -38,6 +38,20 @@ FROM standing_order
 WHERE state = 'live'
   AND type = 'sell'
   AND limit_price <= $1
+ORDER BY limit_price ASC LIMIT 1;
+
+-- name: GetBestMarketBuyer :one
+SELECT *
+FROM standing_order
+WHERE state = 'live'
+  AND type = 'buy'
+ORDER BY limit_price DESC LIMIT 1;
+
+-- name: GetBestMarketSeller :one
+SELECT *
+FROM standing_order
+WHERE state = 'live'
+  AND type = 'sell'
 ORDER BY limit_price ASC LIMIT 1;
 
 -- name: SatisfyOrder :one

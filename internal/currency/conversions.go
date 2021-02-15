@@ -7,6 +7,11 @@ import (
 )
 
 func convertIntToString(amount int64, decimalPlaces int) string {
+	isNegative := amount < 0
+	if isNegative {
+		amount = -amount
+	}
+
 	baseString := strconv.FormatInt(amount, 10)
 	paddingLength := decimalPlaces + 1 - len(baseString)
 	if paddingLength > 0 {
@@ -14,7 +19,11 @@ func convertIntToString(amount int64, decimalPlaces int) string {
 	}
 
 	dotPos := len(baseString) - decimalPlaces
-	return baseString[0:dotPos] + "." + baseString[dotPos:]
+	baseString = baseString[0:dotPos] + "." + baseString[dotPos:]
+	if isNegative {
+		return "-" + baseString
+	}
+	return baseString
 }
 
 func convertStringToAmount(amountStr string, decimalPlaces int) (int64, error) {
@@ -60,6 +69,9 @@ func convertStringToAmount(amountStr string, decimalPlaces int) (int64, error) {
 }
 
 func parseInt(s string) (int64, error) {
+	if len(s) == 0 {
+		return 0, fmt.Errorf("empty string")
+	}
 	val := int64(0)
 	for _, r := range s {
 		if r < '0' || r > '9' {

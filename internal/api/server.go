@@ -1,18 +1,18 @@
 package api
 
 import (
-	"github.com/galcik/vlexchange/internal/db"
+	"github.com/galcik/vlexchange/internal/datastore"
 	"github.com/gorilla/mux"
 	"net/http"
 )
 
 type Server struct {
-	store  *db.Store
+	store  datastore.Store
 	router *mux.Router
 }
 
 // NewServer creates a new HTTP server and set up routing.
-func NewServer(store *db.Store) (*Server, error) {
+func NewServer(store datastore.Store) (*Server, error) {
 	server := &Server{
 		store: store,
 	}

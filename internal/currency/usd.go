@@ -1,5 +1,7 @@
 package currency
 
+import "math"
+
 type USD int64
 
 const USDPrecision = 2
@@ -15,6 +17,10 @@ func (usd USD) Float64() float64 {
 
 func (usd USD) Internal() int64 {
 	return int64(usd)
+}
+
+func NewUSD(amount float64) USD {
+	return USD(math.Round(amount * USDBase))
 }
 
 func ParseUSD(amountStr string) (USD, error) {
