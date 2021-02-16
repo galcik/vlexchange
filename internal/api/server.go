@@ -1,20 +1,25 @@
 package api
 
 import (
+	"github.com/galcik/vlexchange/internal/coinmarket"
 	"github.com/galcik/vlexchange/internal/datastore"
 	"github.com/gorilla/mux"
 	"net/http"
 )
 
+var CoinmarketApiKey string
+
 type Server struct {
-	store  datastore.Store
-	router *mux.Router
+	store             datastore.Store
+	router            *mux.Router
+	coinmarketService coinmarket.CoinmarketService
 }
 
 // NewServer creates a new HTTP server and set up routing.
 func NewServer(store datastore.Store) (*Server, error) {
 	server := &Server{
-		store: store,
+		store:             store,
+		coinmarketService: coinmarket.NewCoinmarketService(CoinmarketApiKey),
 	}
 	server.setupRouter()
 	return server, nil

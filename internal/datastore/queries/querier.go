@@ -19,11 +19,7 @@ type Querier interface {
 	GetReservedAmounts(ctx context.Context, accountID int32) (GetReservedAmountsRow, error)
 	GetStandingOrder(ctx context.Context, id int32) (StandingOrder, error)
 	GetStandingOrders(ctx context.Context, orderIds []int32) ([]StandingOrder, error)
-	InsertAccountForTest(ctx context.Context, arg InsertAccountForTestParams) (Account, error)
-	InsertStandingOrderForTest(ctx context.Context, arg InsertStandingOrderForTestParams) (StandingOrder, error)
 	SatisfyOrder(ctx context.Context, arg SatisfyOrderParams) (StandingOrder, error)
-	SelectAccountsForTest(ctx context.Context) ([]Account, error)
-	SelectStandingOrdersForTest(ctx context.Context) ([]StandingOrder, error)
 	TransferAmounts(ctx context.Context, arg TransferAmountsParams) (int64, error)
 }
 

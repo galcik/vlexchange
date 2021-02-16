@@ -1,3 +1,4 @@
+// Inspired by https://pypi.org/project/testing.postgresql/
 package testutils
 
 import (
@@ -11,7 +12,7 @@ import (
 	"path/filepath"
 )
 
-type TemporaryDb struct {
+type TestingDb struct {
 	dir      string
 	dsn      string
 	txDriver string
@@ -25,19 +26,21 @@ var txDsnIdx = 0
 
 func init() {
 	if os.Getenv("POSTGRES_HOME") == "" {
-		os.Setenv("POSTGRES_HOME", "/usr/lib/postgresql/13")
+		if postgresHome := findPostgresHome(); postgresHome != "" {
+			os.Setenv("POSTGRES_HOME", postgresHome)
+		}
 	}
 }
 
-func NewTemporaryDb() (*TemporaryDb, error) {
-	var tmpDb TemporaryDb
+func NewTestingDb() (*TestingDb, error) {
+	var tmpDb TestingDb
 	if err := tmpDb.open(); err != nil {
 		return nil, err
 	}
 	return &tmpDb, nil
 }
 
-func (db *TemporaryDb) open() error {
+func (db *TestingDb) open() error {
 	if db.dsn != "" {
 		return fmt.Errorf("temporary db already active")
 	}
@@ -77,7 +80,7 @@ func (db *TemporaryDb) open() error {
 	return nil
 }
 
-func (db *TemporaryDb) Close() error {
+func (db *TestingDb) Close() error {
 	if db.dsn == "" {
 		return nil
 	}
@@ -91,11 +94,11 @@ func (db *TemporaryDb) Close() error {
 	return nil
 }
 
-func (db *TemporaryDb) Dsn() string {
+func (db *TestingDb) Dsn() string {
 	return db.dsn
 }
 
-func (db *TemporaryDb) ExecuteSQLFile(filename string) error {
+func (db *TestingDb) ExecuteSQLFile(filename string) error {
 	if db.dsn == "" {
 		return fmt.Errorf("temporary db is not open")
 	}
@@ -117,7 +120,7 @@ func (db *TemporaryDb) ExecuteSQLFile(filename string) error {
 	return nil
 }
 
-func (db *TemporaryDb) registerSingleTxDriver() (string, error) {
+func (db *TestingDb) registerSingleTxDriver() (string, error) {
 	if db.dsn == "" {
 		return "", fmt.Errorf("temporary db is not open")
 	}
@@ -128,7 +131,7 @@ func (db *TemporaryDb) registerSingleTxDriver() (string, error) {
 	return driver, nil
 }
 
-func (db *TemporaryDb) TxDriver() string {
+func (db *TestingDb) TxDriver() string {
 	if len(db.txDriver) == 0 {
 		db.txDriver, _ = db.registerSingleTxDriver()
 	}
@@ -136,7 +139,34 @@ func (db *TemporaryDb) TxDriver() string {
 	return db.txDriver
 }
 
-func (db *TemporaryDb) GetTxDsn() string {
+func (db *TestingDb) GetTxDsn() string {
 	txDsnIdx++
 	return fmt.Sprintf("txCon_%v", txDsnIdx)
+}
+
+var searchPaths = [...]string{
+	"/usr/local/pgsql",
+	"/usr/local",
+	"/usr/pgsql-*",
+	"/usr/lib/postgresql/*",
+	"/opt/local/lib/postgresql*",
+}
+
+func findPostgresHome() string {
+	for _, path := range searchPaths {
+		matches, err := filepath.Glob(path)
+		if err != nil {
+			return ""
+		}
+
+		for _, match := range matches {
+			postgresFilename := filepath.Join(match, "bin", "postgres")
+			if _, err := os.Stat(postgresFilename); os.IsNotExist(err) {
+				continue
+			}
+			return match
+		}
+	}
+
+	return ""
 }

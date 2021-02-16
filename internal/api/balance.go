@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/galcik/vlexchange/internal/coinmarket"
 	"github.com/galcik/vlexchange/internal/currency"
 	"net/http"
 	"strings"
@@ -30,7 +29,7 @@ func (server *Server) handleGetBalance(w http.ResponseWriter, req *http.Request)
 	btcAmount := currency.BTC(account.BtcAmount)
 	usdAmount := currency.USD(account.UsdAmount)
 
-	btcPrice, err := coinmarket.GetBTCPriceInUSD(req.Context())
+	btcPrice, err := server.coinmarketService.GetBTCPriceInUSD(req.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

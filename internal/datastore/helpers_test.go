@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"github.com/galcik/vlexchange/internal/datastore/queries"
+	tq "github.com/galcik/vlexchange/internal/datastore/testqueries"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -12,15 +13,15 @@ type dbHelper struct {
 	t       *testing.T
 	db      *sql.DB
 	context context.Context
-	querier queries.Querier
+	queries *tq.Queries
 }
 
 func newDBHelper(t *testing.T, db *sql.DB) *dbHelper {
-	return &dbHelper{t, db, context.Background(), queries.New(db)}
+	return &dbHelper{t, db, context.Background(), tq.New(db)}
 }
 
-func (helper *dbHelper) createAccount(accountSpec queries.Account) *queries.Account {
-	createdAccount, err := helper.querier.InsertAccountForTest(helper.context, queries.InsertAccountForTestParams{
+func (helper *dbHelper) createAccount(accountSpec queries.Account) *tq.Account {
+	createdAccount, err := helper.queries.CreateAccount(helper.context, tq.CreateAccountParams{
 		Username:  accountSpec.Username,
 		Token:     accountSpec.Token,
 		UsdAmount: accountSpec.UsdAmount,
@@ -34,22 +35,22 @@ func (helper *dbHelper) createAccount(accountSpec queries.Account) *queries.Acco
 	return &createdAccount
 }
 
-func (helper *dbHelper) getAccounts() map[int32]*queries.Account {
-	accounts, err := helper.querier.SelectAccountsForTest(helper.context)
+func (helper *dbHelper) getAccounts() map[int32]*tq.Account {
+	accounts, err := helper.queries.GetAccounts(helper.context)
 	require.NoError(helper.t, err, "unable to get accounts")
-	result := make(map[int32]*queries.Account, len(accounts))
+	result := make(map[int32]*tq.Account, len(accounts))
 	for i := range accounts {
 		result[accounts[i].ID] = &accounts[i]
 	}
 	return result
 }
 
-func (helper *dbHelper) createStandingOrder(orderSpec queries.StandingOrder) *queries.StandingOrder {
-	createdOrder, err := helper.querier.InsertStandingOrderForTest(helper.context,
-		queries.InsertStandingOrderForTestParams{
+func (helper *dbHelper) createStandingOrder(orderSpec queries.StandingOrder) *tq.StandingOrder {
+	createdOrder, err := helper.queries.CreateStandingOrder(helper.context,
+		tq.CreateStandingOrderParams{
 			AccountID:         orderSpec.AccountID,
-			Type:              orderSpec.Type,
-			State:             orderSpec.State,
+			Type:              tq.OrderType(orderSpec.Type),
+			State:             tq.OrderState(orderSpec.State),
 			Quantity:          orderSpec.Quantity,
 			FilledQuantity:    orderSpec.FilledQuantity,
 			FilledPrice:       orderSpec.FilledPrice,
@@ -62,10 +63,10 @@ func (helper *dbHelper) createStandingOrder(orderSpec queries.StandingOrder) *qu
 	return &createdOrder
 }
 
-func (helper *dbHelper) getStandingOrders() map[int32]*queries.StandingOrder {
-	standingOrders, err := helper.querier.SelectStandingOrdersForTest(helper.context)
+func (helper *dbHelper) getStandingOrders() map[int32]*tq.StandingOrder {
+	standingOrders, err := helper.queries.GetStandingOrders(helper.context)
 	require.NoError(helper.t, err, "unable to get standing orders")
-	result := make(map[int32]*queries.StandingOrder, len(standingOrders))
+	result := make(map[int32]*tq.StandingOrder, len(standingOrders))
 	for i := range standingOrders {
 		result[standingOrders[i].ID] = &standingOrders[i]
 	}

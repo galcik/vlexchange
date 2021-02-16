@@ -1,5 +1,7 @@
 package coinmarket
 
+//go:generate mockery -all
+
 import (
 	"context"
 	"encoding/json"
@@ -8,9 +10,19 @@ import (
 	"net/url"
 )
 
-var ApiKey string
+type CoinmarketService interface {
+	GetBTCPriceInUSD(ctx context.Context) (float64, error)
+}
 
-func GetBTCPriceInUSD(ctx context.Context) (float64, error) {
+type CoinmarketServiceImpl struct {
+	ApiKey string
+}
+
+func NewCoinmarketService(apiKey string) CoinmarketService {
+	return &CoinmarketServiceImpl{ApiKey: apiKey}
+}
+
+func (service *CoinmarketServiceImpl) GetBTCPriceInUSD(ctx context.Context) (float64, error) {
 	client := &http.Client{}
 	req, err := http.NewRequestWithContext(
 		ctx,
@@ -26,7 +38,7 @@ func GetBTCPriceInUSD(ctx context.Context) (float64, error) {
 	q.Add("symbol", "BTC")
 
 	req.Header.Set("Accepts", "application/json")
-	req.Header.Add("X-CMC_PRO_API_KEY", ApiKey)
+	req.Header.Add("X-CMC_PRO_API_KEY", service.ApiKey)
 	req.URL.RawQuery = q.Encode()
 
 	resp, err := client.Do(req)

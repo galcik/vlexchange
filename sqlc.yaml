@@ -3,9 +3,18 @@ packages:
   - name: "queries"
     path: "internal/datastore/queries"
     queries: "./internal/datastore/queries/sql"
-    schema: "./internal/datastore/queries/sql"
+    schema: "./internal/datastore/schema"
     engine: "postgresql"
     emit_prepared_queries: false
     emit_interface: true
+    emit_exact_table_names: false
+    emit_empty_slices: false
+  - name: "testqueries"
+    path: "internal/datastore/testqueries"
+    queries: "./internal/datastore/testqueries/sql"
+    schema: "./internal/datastore/schema"
+    engine: "postgresql"
+    emit_prepared_queries: false
+    emit_interface: false
     emit_exact_table_names: false
     emit_empty_slices: false

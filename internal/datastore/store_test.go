@@ -1,32 +1,15 @@
 package datastore
 
 import (
-	"database/sql"
 	"github.com/galcik/vlexchange/internal/currency"
 	"github.com/galcik/vlexchange/internal/datastore/queries"
+	"github.com/galcik/vlexchange/internal/datastore/testqueries"
 	"github.com/stretchr/testify/suite"
 	"testing"
 )
 
 type TestStoreSuite struct {
-	suite.Suite
-	dbHelper *dbHelper
-	db       *sql.DB
-	store    Store
-}
-
-func (suite *TestStoreSuite) BeforeTest(suiteName, testName string) {
-	var err error
-	suite.db, err = sql.Open(temporaryDb.TxDriver(), temporaryDb.GetTxDsn())
-	suite.Nil(err)
-	suite.store, err = NewStore(suite.db)
-	suite.Nil(err)
-
-	suite.dbHelper = newDBHelper(suite.T(), suite.db)
-}
-
-func (suite *TestStoreSuite) AfterTest(suiteName, testName string) {
-	suite.db.Close()
+	TestSuite
 }
 
 func (suite *TestStoreSuite) TestGetAccountByToken() {
@@ -35,7 +18,7 @@ func (suite *TestStoreSuite) TestGetAccountByToken() {
 
 	testCases := []struct {
 		token    string
-		expected *queries.Account
+		expected *testqueries.Account
 	}{
 		{
 			"111111", testAccount1,
@@ -53,7 +36,9 @@ func (suite *TestStoreSuite) TestGetAccountByToken() {
 		account, err := suite.store.GetAccountByToken(tc.token)
 		suite.NoError(err)
 		if tc.expected != nil {
-			suite.Equal(*tc.expected, *account)
+			suite.Equal(tc.expected.Token, account.Token)
+			suite.Equal(tc.expected.ID, account.ID)
+			suite.Equal(tc.expected.Username, account.Username)
 		} else {
 			suite.Nil(account)
 		}
@@ -66,7 +51,7 @@ func (suite *TestStoreSuite) TestGetAccount() {
 
 	testCases := []struct {
 		accountId int32
-		expected  *queries.Account
+		expected  *testqueries.Account
 	}{
 		{
 			testAccount1.ID, testAccount1,
@@ -84,7 +69,9 @@ func (suite *TestStoreSuite) TestGetAccount() {
 		account, err := suite.store.GetAccount(tc.accountId)
 		suite.NoError(err)
 		if tc.expected != nil {
-			suite.Equal(*tc.expected, *account)
+			suite.Equal(tc.expected.Token, account.Token)
+			suite.Equal(tc.expected.ID, account.ID)
+			suite.Equal(tc.expected.Username, account.Username)
 		} else {
 			suite.Nil(account)
 		}
@@ -102,19 +89,19 @@ func (suite *TestStoreSuite) TestComplexScenario() {
 
 	success, err = suite.store.DepositAccount(userA.ID, currency.NewBTC(1), currency.USD(0))
 	suite.Equal(true, success)
-	suite.Nil(err)
+	suite.NoError(err)
 
 	success, err = suite.store.DepositAccount(userB.ID, currency.NewBTC(10), currency.USD(0))
 	suite.Equal(true, success)
-	suite.Nil(err)
+	suite.NoError(err)
 
 	success, err = suite.store.DepositAccount(userC.ID, currency.BTC(0), currency.NewUSD(250_000))
 	suite.Equal(true, success)
-	suite.Nil(err)
+	suite.NoError(err)
 
 	success, err = suite.store.DepositAccount(userD.ID, currency.BTC(0), currency.NewUSD(300_000))
 	suite.Equal(true, success)
-	suite.Nil(err)
+	suite.NoError(err)
 
 	var affectedOrderIds []int32
 	order, affectedOrderIds, err := suite.store.CreateStandingOrder(CreateStandingOrderParams{
@@ -123,7 +110,7 @@ func (suite *TestStoreSuite) TestComplexScenario() {
 		Quantity:   currency.NewBTC(10),
 		LimitPrice: currency.NewUSD(10_000),
 	})
-	suite.Nil(err)
+	suite.NoError(err)
 	suite.NotNil(order)
 	suite.Equal(queries.OrderStateCancelled, order.State)
 	suite.Equal(len(affectedOrderIds), 1)
@@ -138,7 +125,7 @@ func (suite *TestStoreSuite) TestComplexScenario() {
 		Quantity:   currency.NewBTC(10),
 		LimitPrice: currency.NewUSD(10_000),
 	})
-	suite.Nil(err)
+	suite.NoError(err)
 	suite.NotNil(order1)
 	suite.Equal(queries.OrderStateLive, order1.State)
 	suite.ElementsMatch([]int32{order1.ID}, affectedOrderIds)
@@ -149,7 +136,7 @@ func (suite *TestStoreSuite) TestComplexScenario() {
 		Quantity:   currency.NewBTC(10),
 		LimitPrice: currency.NewUSD(20_000),
 	})
-	suite.Nil(err)
+	suite.NoError(err)
 	suite.NotNil(order2)
 	suite.Equal(queries.OrderStateLive, order2.State)
 	suite.ElementsMatch([]int32{order2.ID}, affectedOrderIds)
@@ -159,7 +146,7 @@ func (suite *TestStoreSuite) TestComplexScenario() {
 		OrderType: queries.OrderTypeBuy,
 		Quantity:  currency.NewBTC(15),
 	})
-	suite.Nil(err)
+	suite.NoError(err)
 	suite.NotNil(order)
 	suite.Equal(currency.NewBTC(15), orderResult.Quantity)
 	suite.Equal(currency.NewUSD(200_000), orderResult.Price)
@@ -169,16 +156,16 @@ func (suite *TestStoreSuite) TestComplexScenario() {
 	suite.Equal(currency.NewUSD(50_000), currency.USD(userC.UsdAmount))
 	orders := suite.dbHelper.getStandingOrders()
 	suite.Equal(3, len(orders))
-	order1 = orders[order1.ID]
-	suite.Equal(queries.OrderStateFulfilled, order1.State)
-	suite.Equal(currency.NewBTC(10), currency.BTC(order1.FilledQuantity))
-	suite.Equal(currency.NewBTC(0), currency.BTC(order1.Quantity))
-	suite.Equal(currency.NewUSD(100_000), currency.USD(order1.FilledPrice))
-	order2 = orders[order2.ID]
-	suite.Equal(queries.OrderStateLive, order2.State)
-	suite.Equal(currency.NewBTC(5), currency.BTC(order2.FilledQuantity))
-	suite.Equal(currency.NewBTC(5), currency.BTC(order2.Quantity))
-	suite.Equal(currency.NewUSD(100_000), currency.USD(order2.FilledPrice))
+	dbOrder1 := orders[order1.ID]
+	suite.Equal(testqueries.OrderStateFulfilled, dbOrder1.State)
+	suite.Equal(currency.NewBTC(10), currency.BTC(dbOrder1.FilledQuantity))
+	suite.Equal(currency.NewBTC(0), currency.BTC(dbOrder1.Quantity))
+	suite.Equal(currency.NewUSD(100_000), currency.USD(dbOrder1.FilledPrice))
+	dbOrder2 := orders[order2.ID]
+	suite.Equal(testqueries.OrderStateLive, dbOrder2.State)
+	suite.Equal(currency.NewBTC(5), currency.BTC(dbOrder2.FilledQuantity))
+	suite.Equal(currency.NewBTC(5), currency.BTC(dbOrder2.Quantity))
+	suite.Equal(currency.NewUSD(100_000), currency.USD(dbOrder2.FilledPrice))
 
 	order3, affectedOrderIds, err := suite.store.CreateStandingOrder(CreateStandingOrderParams{
 		AccountID:  userD.ID,
@@ -186,7 +173,7 @@ func (suite *TestStoreSuite) TestComplexScenario() {
 		Quantity:   currency.NewBTC(20),
 		LimitPrice: currency.NewUSD(10_000),
 	})
-	suite.Nil(err)
+	suite.NoError(err)
 	suite.NotNil(order3)
 	suite.Equal(queries.OrderStateLive, order3.State)
 	suite.ElementsMatch([]int32{order3.ID}, affectedOrderIds)
@@ -199,7 +186,7 @@ func (suite *TestStoreSuite) TestComplexScenario() {
 		Quantity:   currency.NewBTC(10),
 		LimitPrice: currency.NewUSD(25_000),
 	})
-	suite.Nil(err)
+	suite.NoError(err)
 	suite.NotNil(order4)
 	suite.Equal(queries.OrderStateCancelled, order4.State)
 	suite.ElementsMatch([]int32{order4.ID}, affectedOrderIds)
@@ -217,7 +204,7 @@ func (suite *TestStoreSuite) TestComplexScenario() {
 		Quantity:   currency.NewBTC(10),
 		LimitPrice: currency.NewUSD(25_000),
 	})
-	suite.Nil(err)
+	suite.NoError(err)
 	suite.NotNil(order5)
 	suite.Equal(queries.OrderStateLive, order5.State)
 	suite.Equal(currency.NewBTC(5), currency.BTC(order5.Quantity))
@@ -227,7 +214,7 @@ func (suite *TestStoreSuite) TestComplexScenario() {
 	suite.ElementsMatch([]int32{order5.ID, order2.ID}, affectedOrderIds)
 	orders = suite.dbHelper.getStandingOrders()
 	suite.Equal(5, len(orders))
-	suite.Equal(queries.OrderStateFulfilled, orders[order2.ID].State)
+	suite.Equal(testqueries.OrderStateFulfilled, orders[order2.ID].State)
 }
 
 func TestStoreTestSuite(t *testing.T) {

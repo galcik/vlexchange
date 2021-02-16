@@ -1,5 +1,7 @@
 package datastore
 
+//go:generate mockery -all
+
 import (
 	"context"
 	"database/sql"
@@ -58,7 +60,9 @@ func (store *DbStore) WithContext(ctx context.Context) Store {
 
 func (store *DbStore) ExecuteTx(transaction func(context.Context, queries.Querier) error) error {
 	ctx := store.context
-	tx, err := store.db.BeginTx(ctx, nil)
+	tx, err := store.db.BeginTx(ctx, &sql.TxOptions{
+		Isolation: sql.LevelSerializable,
+	})
 	if err != nil {
 		return err
 	}
